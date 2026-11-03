@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QueryLab — Interactive SQL Playground & Learning Platform</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#34c934',
+                            600: '#28a728',
+                            700: '#1e7e1e',
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['Fira Code', 'Courier New', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(52, 201, 52, 0.4);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(52, 201, 52, 0.7);
+        }
+        
+        .sketch-bg-light {
+            background: linear-gradient(180deg, rgba(52, 201, 52, 0.85) 0%, rgba(128, 128, 128, 0.85) 100%);
+        }
+        .sketch-bg-dark {
+            background: linear-gradient(180deg, #0d1f0d 0%, #12181b 100%);
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .dark .glass-panel {
+            background: rgba(18, 24, 27, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .code-editor {
+            font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+            tab-size: 4;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 dark:text-slate-100 transition-colors duration-300 sketch-bg-dark flex flex-col font-sans" id="body-bg">
+
+    <!-- Top Navigation Bar -->
+    <header class="w-full px-6 py-4 flex items-center justify-between border-b border-white/10 glass-panel sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <button id="nav-home-btn" onclick="switchView('home')" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center font-bold text-lg shadow-sm">
+                <i class="fa-solid fa-chevron-left text-sm mr-1"></i>
+                <i class="fa-solid fa-database text-brand-500"></i>
+            </button>
+            <h1 class="text-2xl font-black tracking-wider text-white flex items-center gap-2">
+                QUERYLAB <span class="text-xs bg-brand-500 text-black font-bold px-2 py-0.5 rounded-full uppercase tracking-normal">Aiven Cloud</span>
+            </h1>
+        </div>
+
+        <!-- Mode Toggle & Environment Indicator -->
+        <div class="flex items-center gap-4">
+            <div id="backend-status" class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Flask + Aiven Cloud MySQL Connected
+            </div>
+            
+            <button onclick="toggleTheme()" class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-yellow-300 dark:text-yellow-400 transition" title="Toggle Light/Dark Theme">
+                <i class="fa-solid fa-sun text-lg dark:hidden"></i>
+                <i class="fa-solid fa-moon text-lg hidden dark:block"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN VIEW CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center">
+
+        <!-- ========================================== -->
+        <!-- SCREEN 1: HOME VIEW (LANDING PAGE)          -->
+        <!-- ========================================== -->
+        <section id="view-home" class="view-section flex flex-col items-center justify-center py-12">
+            <div class="text-center max-w-2xl mb-12">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 font-semibold text-sm mb-4">
+                    <i class="fa-solid fa-bolt"></i> Interactive SQL Playground & Learning Platform
+                </div>
+                <h2 class="text-4xl sm:text-6xl font-extrabold text-white tracking-tight mb-4">
+                    QUERYLAB
+                </h2>
+                <p class="text-slate-300 text-base sm:text-lg">
+                    Master database queries through live execution on Aiven Cloud MySQL, structured tutorials, and real-time execution outputs.
+                </p>
+            </div>
+
+            <!-- Two Main Navigation Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+                <!-- For Learning Card -->
+                <div onclick="switchView('learn')" class="glass-panel p-8 rounded-2xl border border-white/20 hover:border-brand-500/50 cursor-pointer transform hover:-translate-y-2 transition-all duration-300 shadow-2xl group flex flex-col justify-between">
+                    <div>
+                        <div class="w-16 h-16 rounded-2xl bg-brand-500/20 border border-brand-500/40 flex items-center justify-center text-brand-400 text-2xl mb-6 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-book-open"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3 group-hover:text-brand-400 transition-colors">
+                            For Learning
+                        </h3>
+                        <p class="text-slate-300 text-sm leading-relaxed mb-6">
+                            Learn DDL, DML, DQL, Operators, Joins, TCL, and DCL in a crisp, structured manner with copy-ready code snippets.
+                        </p>
+                    </div>
+                    <div class="flex items-center text-brand-400 font-semibold text-sm group-hover:translate-x-2 transition-transform">
+                        Explore SQL Lessons <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </div>
+                </div>
+
+                <!-- For Practice Card -->
+                <div onclick="switchView('practice')" class="glass-panel p-8 rounded-2xl border border-white/20 hover:border-brand-500/50 cursor-pointer transform hover:-translate-y-2 transition-all duration-300 shadow-2xl group flex flex-col justify-between">
+                    <div>
+                        <div class="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-2xl mb-6 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-terminal"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3 group-hover:text-emerald-400 transition-colors">
+                            For Practice
+                        </h3>
+                        <p class="text-slate-300 text-sm leading-relaxed mb-6">
+                            Hands-on practice with a live terminal editor. Execute custom SQL statements on Aiven Cloud MySQL and inspect outputs instantly.
+                        </p>
+                    </div>
+                    <div class="flex items-center text-emerald-400 font-semibold text-sm group-hover:translate-x-2 transition-transform">
+                        Open SQL Playground <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 2: PRACTICE VIEW (SQL PLAYGROUND)   -->
+        <!-- ========================================== -->
+        <section id="view-practice" class="view-section hidden flex-col gap-4">
+            <!-- Header Banner -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-white/10">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-code text-brand-500"></i> Practice Time
+                    </h2>
+                    <p class="text-xs text-slate-300 italic font-mono">"Mastery comes from continuous query execution."</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="resetPracticeDatabase()" class="px-3 py-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 border border-brand-500/30 text-xs font-semibold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Load Sample Tables
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sketch Layout: Left Sidebar + Right Top Editor + Right Bottom Output -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full min-h-[580px]">
+                
+                <!-- Left Sidebar: SHOW TABLES (Database) -->
+                <div class="lg:col-span-4 glass-panel rounded-2xl p-4 flex flex-col gap-3 overflow-hidden border border-white/10 shadow-xl">
+                    <div class="flex items-center justify-between pb-2 border-b border-white/10">
+                        <h3 class="font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-server text-brand-400"></i> Database Explorer
+                        </h3>
+                        <button onclick="renderDatabaseTables()" class="text-slate-400 hover:text-white text-xs transition" title="Refresh Tables">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                        </button>
+                    </div>
+
+                    <div class="text-xs text-slate-400 font-mono flex justify-between">
+                        <span>SHOW TABLES;</span>
+                        <span id="table-count-badge" class="bg-brand-500/20 text-brand-300 px-2 py-0.5 rounded-full font-bold">0 Tables</span>
+                    </div>
+
+                    <!-- Card-like Table Container -->
+                    <div id="tables-container" class="flex-1 overflow-y-auto space-y-3 pr-1">
+                        <!-- Table cards rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Right Side Layout (Top Code Editor, Bottom Output) -->
+                <div class="lg:col-span-8 flex flex-col gap-4">
+                    
+                    <!-- Space to write Code! Editor Panel -->
+                    <div class="glass-panel rounded-2xl p-4 flex flex-col gap-2 relative border border-white/10 shadow-xl">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-pen-to-square text-brand-400"></i> SQL Query Editor
+                            </span>
+                            <div class="flex items-center gap-2">
+                                <button onclick="clearEditor('practice-editor')" class="px-2.5 py-1 text-xs text-slate-400 hover:text-white transition">
+                                    <i class="fa-solid fa-trash mr-1"></i> Clear
+                                </button>
+                                <!-- RUN BUTTON -->
+                                <button onclick="runQueryFromEditor('practice-editor')" class="px-5 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-sm shadow-lg shadow-brand-500/30 transition transform active:scale-95 flex items-center gap-2">
+                                    <i class="fa-solid fa-play"></i> RUN
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="relative rounded-xl overflow-hidden border border-white/10 bg-slate-950/80">
+                            <textarea id="practice-editor" rows="7" spellcheck="false" class="code-editor w-full p-4 bg-transparent text-emerald-400 focus:outline-none resize-y text-sm font-mono leading-relaxed" placeholder="-- Write your SQL query here...&#10;SELECT * FROM students;"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Output of code Panel -->
+                    <div class="glass-panel rounded-2xl p-4 flex-1 flex flex-col gap-3 min-h-[240px] border border-white/10 shadow-xl overflow-hidden">
+                        <div class="flex items-center justify-between pb-2 border-b border-white/10">
+                            <h3 class="font-bold text-xs uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-table text-brand-400"></i> Execution Output
+                            </h3>
+                            <span id="execution-stats" class="text-xs font-mono text-slate-400">Ready</span>
+                        </div>
+
+                        <!-- Result Area -->
+                        <div id="practice-output" class="flex-1 overflow-auto rounded-xl bg-slate-950/60 p-3 border border-white/5 text-xs font-mono">
+                            <div class="h-full flex flex-col items-center justify-center text-slate-500 gap-2 py-8">
+                                <i class="fa-solid fa-terminal text-2xl"></i>
+                                <p>Execute a SQL query above to view tabular results here.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SCREEN 3: LEARN VIEW (LEARNING HUB)        -->
+        <!-- ========================================== -->
+        <section id="view-learn" class="view-section hidden flex-col gap-4">
+            <!-- Header & Subtitle -->
+            <div class="pb-2 border-b border-white/10">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap text-brand-500"></i> Learn SQL Hub
+                </h2>
+                <p class="text-xs text-slate-300">Starting new? Got stuck somewhere? Check out our interactive lessons for SQL commands.</p>
+            </div>
+
+            <!-- Sketch Layout: Index (Topics) | Theory Panel | Interactive Terminal & Output -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full min-h-[580px]">
+                
+                <!-- Left Index (Topics) List -->
+                <div class="lg:col-span-3 glass-panel rounded-2xl p-4 flex flex-col gap-3 overflow-hidden border border-white/10 shadow-xl">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-slate-300 pb-2 border-b border-white/10 flex items-center gap-2">
+                        <i class="fa-solid fa-list-ol text-brand-400"></i> Topics Index
+                    </h3>
+
+                    <div id="topic-list" class="flex-1 overflow-y-auto space-y-1.5 pr-1 text-xs">
+                        <!-- Dynamic topic buttons rendered here -->
+                    </div>
+                </div>
+
+                <!-- Middle Column: Theory & Examples Panel -->
+                <div class="lg:col-span-5 glass-panel rounded-2xl p-5 flex flex-col gap-4 overflow-y-auto border border-white/10 shadow-xl max-h-[620px]">
+                    <div id="theory-content">
+                        <!-- Topic details rendered here dynamically -->
+                    </div>
+                </div>
+
+                <!-- Right Column: Copy Terminal + Output -->
+                <div class="lg:col-span-4 flex flex-col gap-4">
+                    
+                    <!-- Terminal Panel -->
+                    <div class="glass-panel rounded-2xl p-4 flex flex-col gap-2 border border-white/10 shadow-xl">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-terminal text-brand-400"></i> Interactive Terminal
+                            </span>
+                            <button onclick="runQueryFromEditor('learn-editor')" class="px-4 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs shadow-md transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-play text-xs"></i> RUN
+                            </button>
+                        </div>
+                        <div class="relative rounded-xl overflow-hidden border border-white/10 bg-slate-950/80">
+                            <textarea id="learn-editor" rows="6" spellcheck="false" class="code-editor w-full p-3 bg-transparent text-emerald-400 focus:outline-none resize-y text-xs font-mono leading-relaxed" placeholder="Click 'Try Yourself' on any topic example to copy code here..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Output Panel -->
+                    <div class="glass-panel rounded-2xl p-4 flex-1 flex flex-col gap-2 min-h-[220px] border border-white/10 shadow-xl overflow-hidden">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                            <i class="fa-solid fa-square-poll-vertical text-brand-400"></i> Terminal Output
+                        </span>
+                        <div id="learn-output" class="flex-1 overflow-auto rounded-xl bg-slate-950/60 p-3 border border-white/5 text-xs font-mono">
+                            <p class="text-slate-500 italic">Example outputs will appear here when you execute a query.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-4 text-center text-xs text-slate-400 border-t border-white/10 mt-auto glass-panel">
+        <p>QueryLab — DBMS Micro-Project | Powered by Python Flask & Aiven Cloud MySQL</p>
+    </footer>
+
+    <!-- INLINE JAVASCRIPT: Backend API Integration & UI Controller -->
+    <script>
+        /* ==========================================================================
+           1. SQL TOPICS DATASET (DDL, DML, DQL, Operators, Joins, TCL, DCL)
+           ========================================================================== */
+        const SQL_TOPICS = [
+            {
+                id: 'ddl',
+                category: 'DDL (Data Definition Language)',
+                title: 'CREATE, ALTER, DROP, TRUNCATE',
+                summary: 'Commands used to define, modify, or destroy database structures like tables.',
+                content: `
+                    <h4 class="text-base font-bold text-white mb-2">Data Definition Language (DDL)</h4>
+                    <p class="text-slate-300 text-xs leading-relaxed mb-3">DDL manages the overall database schema structure.</p>
+                    
+                    <div class="space-y-3">
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-white/10">
+                            <div class="font-bold text-brand-400 text-xs mb-1">1. CREATE TABLE</div>
+                            <p class="text-slate-300 text-xs mb-2">Defines a new database table structure.</p>
+                            <button onclick="copyToTerminal(\`CREATE TABLE students (\\n  id INT PRIMARY KEY,\\n  name VARCHAR(100),\\n  marks INT\\n);\`)" class="px-2.5 py-1 bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 border border-brand-500/30 rounded text-xs font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-copy"></i> Try Yourself
+                            </button>
+                        </div>
+
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-white/10">
+                            <div class="font-bold text-brand-400 text-xs mb-1">2. ALTER TABLE</div>
+                            <p class="text-slate-300 text-xs mb-2">Modifies existing columns in a table.</p>
+                            <button onclick="copyToTerminal(\`ALTER TABLE students ADD grade VARCHAR(10);\`)" class="px-2.5 py-1 bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 border border-brand-500/30 rounded text-xs font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-copy"></i> Try Yourself
+                            </button>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'dml',
+                category: 'DML (Data Manipulation Language)',
+                title: 'INSERT, UPDATE, DELETE',
+                summary: 'Commands used to manage data records inside created tables.',
+                content: `
+                    <h4 class="text-base font-bold text-white mb-2">Data Manipulation Language (DML)</h4>
+                    <p class="text-slate-300 text-xs leading-relaxed mb-3">DML commands insert, alter, or purge records from existing database tables.</p>
+                    
+                    <div class="space-y-3">
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-white/10">
+                            <div class="font-bold text-emerald-400 text-xs mb-1">1. INSERT INTO</div>
+                            <p class="text-slate-300 text-xs mb-2">Adds new rows into a target table.</p>
+                            <button onclick="copyToTerminal(\`INSERT INTO students VALUES (1, 'Khush', 95);\`)" class="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded text-xs font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-copy"></i> Try Yourself
+                            </button>
+                        </div>
+
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-white/10">
+                            <div class="font-bold text-emerald-400 text-xs mb-1">2. UPDATE</div>
+                            <p class="text-slate-300 text-xs mb-2">Modifies existing row values matching a condition.</p>
+                            <button onclick="copyToTerminal(\`UPDATE students SET marks = 98 WHERE id = 1;\`)" class="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded text-xs font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-copy"></i> Try Yourself
+                            </button>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'dql',
+                category: 'DQL (Data Query Language)',
+                title: 'SELECT & Projection',
+                summary: 'Used to retrieve records from database tables.',
+                content: `
+                    <h4 class="text-base font-bold text-white mb-2">Data Query Language (DQL)</h4>
+                    <p class="text-slate-300 text-xs leading-relaxed mb-3">SELECT queries extract formatted data subsets from tables.</p>
+                    
+                    <div class="space-y-3">
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-white/10">
+                            <div class="font-bold text-cyan-400 text-xs mb-1">Select All Rows</div>
+                            <p class="text-slate-300 text-xs mb-2">Retrieves all columns and rows from a table.</p>
+                            <button onclick="copyToTerminal(\`SELECT * FROM students;\`)" class="px-2.5 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 rounded text-xs font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-copy"></i> Try Yourself
+                            </button>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'joins',
+                category: 'Joins',
+                title: 'INNER, LEFT, RIGHT JOIN',
+                summary: 'Combine rows from two or more tables based on related columns.',
+                content: `
+                    <h4 class="text-base font-bold text-white mb-2">Relational Joins</h4>
+                    <p class="text-slate-300 text-xs leading-relaxed mb-3">Joins link primary keys and foreign keys across separate tables.</p>
+                    
+                    <div class="space-y-3">
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-white/10">
+                            <div class="font-bold text-purple-400 text-xs mb-1">INNER JOIN</div>
+                            <p class="text-slate-300 text-xs mb-2">Combines records that have matching key values in both tables.</p>
+                            <button onclick="copyToTerminal(\`SELECT s.name, c.course_name FROM students s INNER JOIN courses c ON s.id = c.student_id;\`)" class="px-2.5 py-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 rounded text-xs font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-copy"></i> Try Yourself
+                            </button>
+                        </div>
+                    </div>
+                `
+            }
+        ];
+
+        /* ==========================================================================
+           2. BACKEND API COMMUNICATION FUNCTIONS
+           ========================================================================== */
+        async function executeQueryOnBackend(query) {
+            const startTime = performance.now();
+            try {
+                const response = await fetch('/api/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+                
+                const result = await response.json();
+                const endTime = performance.now();
+                result.executionTime = Math.round(endTime - startTime);
+                return result;
+            } catch (err) {
+                return {
+                    success: false,
+                    error: "Network connection error: " + err.message,
+                    executionTime: 0
+                };
+            }
+        }
+
+        /* ==========================================================================
+           3. UI CONTROLLER & VIEW SWITCHING
+           ========================================================================== */
+        function switchView(viewName) {
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.add('hidden'));
+            const activeView = document.getElementById(`view-${viewName}`);
+            if (activeView) activeView.classList.remove('hidden');
+
+            const homeBtn = document.getElementById('nav-home-btn');
+            if (viewName === 'home') {
+                homeBtn.classList.add('hidden');
+            } else {
+                homeBtn.classList.remove('hidden');
+            }
+
+            if (viewName === 'practice') {
+                renderDatabaseTables();
+            } else if (viewName === 'learn') {
+                renderTopicsIndex();
+            }
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            const bg = document.getElementById('body-bg');
+            if (document.documentElement.classList.contains('dark')) {
+                bg.className = 'min-h-screen text-slate-100 transition-colors duration-300 sketch-bg-dark flex flex-col font-sans';
+            } else {
+                bg.className = 'min-h-screen text-slate-900 transition-colors duration-300 sketch-bg-light flex flex-col font-sans';
+            }
+        }
+
+        /* ==========================================================================
+           4. PRACTICE VIEW CONTROLLER (AIVEN CLOUD MYSQL)
+           ========================================================================== */
+        async function renderDatabaseTables() {
+            const container = document.getElementById('tables-container');
+            const badge = document.getElementById('table-count-badge');
+
+            try {
+                const response = await fetch('/api/tables');
+                const data = await response.json();
+
+                if (!data.success) {
+                    container.innerHTML = `<div class="p-4 text-center text-red-400 text-xs italic bg-slate-900/40 rounded-xl border border-red-500/20">Error: ${data.error}</div>`;
+                    badge.textContent = `0 Tables`;
+                    return;
+                }
+
+                const tables = data.tables;
+                badge.textContent = `${tables.length} Tables`;
+
+                if (tables.length === 0) {
+                    container.innerHTML = `
+                        <div class="p-4 text-center text-slate-400 text-xs italic bg-slate-900/40 rounded-xl border border-white/5">
+                            No tables found in Aiven database. Create one using CREATE TABLE!
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = tables.map(tbl => {
+                    return `
+                        <div class="glass-panel p-3 rounded-xl border border-white/10 hover:border-brand-500/40 transition group">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="font-bold text-white text-xs flex items-center gap-1.5">
+                                    <i class="fa-solid fa-table-cells text-brand-400"></i> ${tbl.name}
+                                </span>
+                                <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-mono">
+                                    ${tbl.rows} rows
+                                </span>
+                            </div>
+                            <div class="text-[11px] font-mono text-slate-400 mb-2 truncate">
+                                ${tbl.columns.join(', ')}
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="quickQuery('SELECT * FROM \`${tbl.name}\`;')" class="flex-1 py-1 bg-brand-500/10 hover:bg-brand-500/20 text-brand-300 rounded text-[10px] font-semibold border border-brand-500/20 transition">
+                                    SELECT *
+                                </button>
+                                <button onclick="quickQuery('DROP TABLE \`${tbl.name}\`;')" class="px-2 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 rounded text-[10px] font-semibold border border-rose-500/20 transition">
+                                    DROP
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                container.innerHTML = `<div class="p-4 text-center text-red-400 text-xs italic bg-slate-900/40 rounded-xl border border-red-500/20">Failed to load tables from Flask backend.</div>`;
+                badge.textContent = `0 Tables`;
+            }
+        }
+
+        function quickQuery(sql) {
+            const editor = document.getElementById('practice-editor');
+            editor.value = sql;
+            runQueryFromEditor('practice-editor');
+        }
+
+        function clearEditor(editorId) {
+            document.getElementById(editorId).value = '';
+        }
+
+        async function runQueryFromEditor(editorId) {
+            const query = document.getElementById(editorId).value;
+            const outputId = editorId === 'practice-editor' ? 'practice-output' : 'learn-output';
+            const outputContainer = document.getElementById(outputId);
+
+            outputContainer.innerHTML = `
+                <div class="p-4 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-spinner fa-spin text-brand-400"></i> Executing query on Aiven Cloud MySQL...
+                </div>`;
+
+            const result = await executeQueryOnBackend(query);
+
+            if (editorId === 'practice-editor') {
+                const affected = result.affected_rows ?? result.row_count ?? 0;
+                document.getElementById('execution-stats').textContent = `${result.executionTime || 0}ms | ${affected} affected`;
+            }
+
+            renderQueryResult(result, outputContainer);
+            renderDatabaseTables();
+        }
+
+        function renderQueryResult(result, container) {
+            if (!result.success) {
+                container.innerHTML = `
+                    <div class="p-3 bg-red-500/10 border border-red-500/30 text-red-300 rounded-xl flex items-start gap-2.5">
+                        <i class="fa-solid fa-triangle-exclamation text-red-400 mt-0.5"></i>
+                        <div>
+                            <div class="font-bold text-xs uppercase mb-1">MySQL Execution Error</div>
+                            <div class="text-xs font-mono">${result.error}</div>
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            if (result.type === 'select' || result.columns) {
+                const rows = result.data || [];
+                const columns = result.columns || [];
+
+                if (rows.length === 0) {
+                    container.innerHTML = `
+                        <div class="p-3 text-slate-400 text-xs italic">
+                            ${result.message || 'Query executed successfully. Result set is empty (0 rows).'}
+                        </div>`;
+                    return;
+                }
+
+                let tableHtml = `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-white/10 bg-slate-900/80">
+                                    ${columns.map(col => `<th class="p-2 text-brand-400 font-bold uppercase text-[11px]">${col}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows.map(row => `
+                                    <tr class="border-b border-white/5 hover:bg-white/5 transition">
+                                        ${row.map(cell => `<td class="p-2 text-slate-200">${cell !== null ? cell : '<span class="text-slate-500 italic">NULL</span>'}</td>`).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
+                container.innerHTML = tableHtml;
+            } else {
+                container.innerHTML = `
+                    <div class="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-xl flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                        <span class="text-xs font-semibold">${result.message || 'Query executed successfully.'}</span>
+                    </div>`;
+            }
+        }
+
+        function resetPracticeDatabase() {
+            const editor = document.getElementById('practice-editor');
+            editor.value = "CREATE TABLE IF NOT EXISTS students (\n  id INT PRIMARY KEY,\n  name VARCHAR(100),\n  marks INT\n);\nINSERT INTO students VALUES (1, 'Khush', 95), (2, 'Ananya', 88);\nSELECT * FROM students;";
+            runQueryFromEditor('practice-editor');
+        }
+
+        /* ==========================================================================
+           5. LEARN VIEW CONTROLLER
+           ========================================================================== */
+        function renderTopicsIndex() {
+            const container = document.getElementById('topic-list');
+            container.innerHTML = SQL_TOPICS.map((topic) => `
+                <button onclick="selectTopic('${topic.id}')" id="topic-btn-${topic.id}" class="w-full text-left p-2.5 rounded-xl border border-white/5 hover:border-brand-500/30 hover:bg-white/5 transition group flex flex-col gap-1">
+                    <span class="font-bold text-white group-hover:text-brand-400">${topic.category}</span>
+                    <span class="text-[10px] text-slate-400 truncate">${topic.title}</span>
+                </button>
+            `).join('');
+
+            selectTopic(SQL_TOPICS[0].id);
+        }
+
+        function selectTopic(topicId) {
+            const topic = SQL_TOPICS.find(t => t.id === topicId);
+            if (!topic) return;
+
+            document.querySelectorAll('#topic-list button').forEach(btn => btn.classList.remove('bg-brand-500/20', 'border-brand-500/40'));
+            const activeBtn = document.getElementById(`topic-btn-${topicId}`);
+            if (activeBtn) activeBtn.classList.add('bg-brand-500/20', 'border-brand-500/40');
+
+            document.getElementById('theory-content').innerHTML = topic.content;
+        }
+
+        function copyToTerminal(sqlText) {
+            const editor = document.getElementById('learn-editor');
+            editor.value = sqlText;
+            runQueryFromEditor('learn-editor');
+        }
+
+        // Initialize default view on page load
+        window.onload = function() {
+            switchView('home');
+        };
+    </script>
+</body>
+</html>
